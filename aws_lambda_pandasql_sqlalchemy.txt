@@ -1,0 +1,27 @@
+Read data using SQL queries in aws lambda 
+#required library = 1) pandasql 2) sqlalchemy
+#libraries available in below zip folder (awslambda_python_dependencies)
+
+import json
+import boto3
+import io
+import pandas as pd
+import pandasql as ps
+import s3fs
+import fsspec
+import csv
+
+def lambda_handler(event, context):
+    # TODO implement
+    print(1)
+    s3 = boto3.client('s3')
+    
+    df=pd.read_csv('s3://testbuck8sept/avdgrp/asl.csv')
+    res = ps.sqldf("select name from df")
+    print(res)
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Hello from Lambda!')
+    }
+
