@@ -1,0 +1,67 @@
+# TRIGGER LAMBDA FUNCTION BY LATEST FILE UPLOADING IN S3 WITH SPECIFIC PATTERN
+# AND STORE THE FILE AFTER PROCESSIING WITH SAME NAME 
+
+import boto3
+import pandas as pd
+import datetime
+import fsspec
+import s3fs
+
+def lambda_handler(event, context):
+    foldname=event['Records'][0]['s3']['object']['key']
+    lst=foldname.split('/')
+    filename=lst[-1]   ########   data13Sep.csv
+    s3=boto3.client('s3')
+    dt=datetime.datetime.today()
+    format=dt.strftime("%d")+dt.strftime('%b') ### 13Sep
+    dt_frmt='data'+format+'.csv'         #####   data13Sep.csv 
+    if (filename)==(dt_frmt):
+        df=pd.read_csv('s3://lambdasfile/input/{}'.format(filename))
+        df.to_csv('s3://lambdasfile/new/{}'.format(filename))
+    else:
+        print('no file from client ...Enjoy !!!!!!')
+
+
+------------------------------------------------------------------------
+
+
+import boto3
+import pandas as pd
+import datetime
+import fsspec
+import s3fs
+
+def lambda_handler(event, context):
+    # print(event)
+    # print(context)
+    # This event will generate while triggering the lambda by uploading the file in s3 bucket
+    # event={'Records': [{'eventVersion': '2.1', 'eventSource': 'aws:s3', 'awsRegion': 'ap-south-1', 'eventTime': '2022-09-14T08:01:33.737Z', 'eventName': 'ObjectCreated:Put', 'userIdentity': {'principalId': 'A2NP5VN7QA5LER'}, 'requestParameters': {'sourceIPAddress': '116.73.71.100'}, 'responseElements': {'x-amz-request-id': 'MKXR4RKEYGH5F08H', 'x-amz-id-2': '7kfUb/iM00qkhiUlxim2DeiD12/2y5BD9+Obls10Lgy9DcxFMQQ4eUIwI9hGCtc37twNG47pLsHAuxEcH0+/oCSJYmAsDGU6'}, 's3': {'s3SchemaVersion': '1.0', 'configurationId': 'a28a71a2-63e0-4249-88ea-92c9450c3904', 'bucket': {'name': 'lambdasfile', 'ownerIdentity': {'principalId': 'A2NP5VN7QA5LER'}, 'arn': 'arn:aws:s3:::lambdasfile'}, 'object': {'key': 'input/employs14Sep.csv', 'size': 93, 'eTag': '641fabc6a9b94097092fc8cb456f5a37', 'sequencer': '0063218A5DB5199F89'}}}]}
+    #bucketname=event['Records'][0]['s3']['bucket']['name']
+    foldname=event['Records'][0]['s3']['object']['key']
+    lst=foldname.split('/')
+    filename=lst[-1]   ########   data13Sep.csv
+    s3=boto3.client('s3')
+    # print(s3)  # <botocore.client.S3 object at 0x7fe70ad50220>
+    # print(bucketname)
+    # print(foldname)
+    # print(filename)
+
+    dt=datetime.datetime.today()
+    format=dt.strftime("%d")+dt.strftime('%b') ### 13Sep
+    dt_frmt='employs'+format+'.csv'         #####   data13Sep.csv 
+    # print(dt_frmt)
+    # print(format)
+    # print(dt)
+    if (filename)==(dt_frmt):
+        df=pd.read_csv('s3://lambdasfile/input/{}'.format(filename))
+        # print(df)
+        df.to_csv('s3://lambdasfile/new/{}'.format(filename))
+    else:
+        print('no file from client ...Enjoy !!!!!!')
+    
+
+
+
+
+
+    
