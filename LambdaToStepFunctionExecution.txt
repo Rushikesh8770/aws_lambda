@@ -1,0 +1,10 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    
+    stepfunctions=boto3.client("stepfunctions")
+    stepfunctions.start_execution(stateMachineArn="arn:aws:states:ap-south-1:467128938678:stateMachine:MyStateMachine4",  # put step function ARN here
+    name="MyStateMachine4")  # Here put step function name 
+
+ 
