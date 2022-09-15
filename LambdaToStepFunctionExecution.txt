@@ -1,10 +1,10 @@
 import json
 import boto3
+import uuid  # library for to generate unique id
 
 def lambda_handler(event, context):
     
+    uid=uuid.uuid4()
     stepfunctions=boto3.client("stepfunctions")
-    stepfunctions.start_execution(stateMachineArn="arn:aws:states:ap-south-1:467128938678:stateMachine:MyStateMachine4",  # put step function ARN here
-    name="MyStateMachine4")  # Here put step function name 
-
- 
+    stepfunctions.start_execution(stateMachineArn="arn:aws:states:ap-south-1:467128938678:stateMachine:MyNewStateMachine",  # put step function ARN here
+    name="MyNewStateMachine"+str(uid))  # Here put step function name 
