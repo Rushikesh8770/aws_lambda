@@ -1,0 +1,15 @@
+{
+  "StartAt": "state1",
+  "States": {
+    "state1": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:steplambda",
+      "Next": "state2"
+    },
+    "state2": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:uuidfn",
+      "End": true
+    }
+  }
+}
