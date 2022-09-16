@@ -5,12 +5,39 @@
   "States": {
     "state1": {
       "Type": "Task",
-      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda1",  ## ARN OF LAMBDA1
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda1",   ## ARN OF LAMBDA1
       "Next": "state2"
     },
     "state2": {
       "Type": "Task",
-      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda2",  ## ARN OF LAMBDA2
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda2",   ## ARN OF LAMBDA2
+      "End": true
+    }
+  }
+}
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+# invoke of 3 lambdas
+
+# output of lambda 1 as parameter to lambda 2,and output of lambda 2 as parameter to lambda 3,
+
+{
+  "StartAt": "state1",
+  "States": {
+    "state1": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda1",    ## ARN of lambda 1
+      "Next": "state2"
+    },
+    "state2": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda2",    ## ARN of lambda 2
+      "Next": "state3"
+    },
+    "state3": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda3",    ## ARN of lambda 3
       "End": true
     }
   }
