@@ -1,14 +1,16 @@
+# lambda1 passing as parameter to lambda2 using step function
+
 {
   "StartAt": "state1",
   "States": {
     "state1": {
       "Type": "Task",
-      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:steplambda",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda1",  ## ARN OF LAMBDA1
       "Next": "state2"
     },
     "state2": {
       "Type": "Task",
-      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:uuidfn",
+      "Resource": "arn:aws:lambda:ap-south-1:467128938678:function:lambda2",  ## ARN OF LAMBDA2
       "End": true
     }
   }
