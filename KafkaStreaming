@@ -1,0 +1,162 @@
+from pyspark.sql import *
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder.master("local[*]").appName("test").getOrCreate()
+sc = spark.sparkContext
+df = spark \
+  .readStream \
+  .format("kafka") \
+  .option("kafka.bootstrap.servers", "localhost:9092") \
+  .option("subscribe", "indpak") \
+  .load()
+ndf=df.selectExpr("CAST(value AS STRING)")
+# ndf=df.withColumn("value","CAST(value AS STRING)")
+# ndf.printSchema()
+# query = ndf.writeStream\
+#     .format("console")\
+#     .start()
+ex=r'^(\S+),(\S+),(\S+)'
+res=ndf.select(regexp_extract('value',ex,1).alias("name"),regexp_extract('value',ex,2).alias("age"),regexp_extract('value',ex,3).alias("city"))
+query = res.writeStream.format("console").start()
+
+def foreach_batch_function(df, bid):
+  host="jdbc:mysql://rushikesh.czcemaajrvs2.ap-south-1.rds.amazonaws.com:3306/mysqldb?useSSL=false"
+  df.write.mode("append").format("jdbc").option("url",host).option("user","myuser")\
+    .option("password","mypassword").option("driver","com.mysql.cj.jdbc.Driver")\
+    .option("dbtable","kafkaliveabhi").save()
+
+  pass
+# query.awaitTermination()
+res.writeStream.foreachBatch(foreach_batch_function).start().awaitTermination()
+
+--------------------------------------------------------------------------------------------------------------------
+
+from pyspark.sql import *
+from pyspark.sql.functions import *
+import re
+import json
+from pyspark.sql.types import *
+if __name__=="__main__":
+    spark = SparkSession.builder.master("local[*]").appName("test").\
+      config("spark.streaming.stopGracefullyOnShutdown","true").\
+      config("spark.sql.streaming.schemaInference","true").getOrCreate()
+    #read data from nifioutput folder---(using nifi livedata is generated in nifioutput folder)
+    raw_df=spark.readStream.format('json').option('multiLine','true').\
+      option("path","C:\\nifi_folder\\nifioutput").option("maxFilesPerTrigger",1).load()
+    raw_df.printSchema()
+
+    #convert this json data into structured format
+    def read_nested_json(df):
+      column_list = []
+      for column_name in df.schema.names:
+        if isinstance(df.schema[column_name].dataType, ArrayType):
+          df = df.withColumn(column_name, explode(column_name))
+          column_list.append(column_name)
+        elif isinstance(df.schema[column_name].dataType, StructType):
+          for field in df.schema[column_name].dataType.fields:
+            column_list.append(col(column_name + "." + field.name).alias(column_name + "_" + field.name))
+        else:
+          column_list.append(column_name)
+      df = df.select(column_list)
+      return df;
+
+
+    def flatten(df):
+      read_nested_json_flag = True
+      while read_nested_json_flag:
+        df = read_nested_json(df);
+        read_nested_json_flag = False
+        for column_name in df.schema.names:
+          if isinstance(df.schema[column_name].dataType, ArrayType):
+            read_nested_json_flag = True
+          elif isinstance(df.schema[column_name].dataType, StructType):
+            read_nested_json_flag = True;
+      cols = [re.sub('[^a-zA-Z0-1]', "", c.lower()) for c in df.columns]
+      return df.toDF(*cols);
+
+    df1 = flatten(raw_df)
+
+    df1.printSchema()
+    #display data on console ....just for testing purpose
+    #df1.writeStream.format('console').outputMode("append").start().awaitTermination()
+
+    #write this data in mysql
+    def foreach_batch_function(df,epoch_id):
+      df.write.mode('append').format('jdbc').option('url','jdbc:mysql://rushikesh.czcemaajrvs2.ap-south-1.rds.amazonaws.com:3306/mysqldb?useSSL=false')\
+        .option('user','myuser').option('password','mypassword').option('dbtable','livefiledata1').\
+        option('driver','com.mysql.jdbc.Driver').save()
+    pass
+
+    df1.writeStream.foreachBatch(foreach_batch_function).start().awaitTermination()
+    
+    ----------------------------------------------------------------------------------------------------------
+    
+    
+    from pyspark.sql import *
+from pyspark.sql.functions import *
+import re
+import json
+from pyspark.sql.types import *
+if __name__=="__main__":
+    spark = SparkSession.builder.master("local[*]").appName("test").\
+      config("spark.streaming.stopGracefullyOnShutdown","true").\
+      config("spark.sql.streaming.schemaInference","true").getOrCreate()
+    #read data from nifioutput folder---(using nifi livedata is generated in nifioutput folder)
+    kafka_df = spark.readStream \
+        .format("kafka") \
+        .option("kafka.bootstrap.servers", "localhost:9092") \
+        .option("subscribe", "livedata1") \
+        .option("startingOffsets", "earliest") \
+        .load()
+    res = kafka_df.selectExpr("CAST(value AS STRING)")
+    #create schema for json data from existiong/dummy json data present in nifioutput folder
+    sch = spark.read.format("json").option("multiLine", "true").load("C:\\nifi_folder\\nifioutput").schema
+    fdf = res.withColumn("value", from_json(col("value"), sch))
+    fdf.printSchema()
+
+    # #convert this json data into structured format
+    def read_nested_json(df):
+        column_list = []
+        for column_name in df.schema.names:
+            if isinstance(df.schema[column_name].dataType, ArrayType):
+                df = df.withColumn(column_name, explode(column_name))
+                column_list.append(column_name)
+            elif isinstance(df.schema[column_name].dataType, StructType):
+                for field in df.schema[column_name].dataType.fields:
+                    column_list.append(col(column_name + "." + field.name).alias(column_name + "_" + field.name))
+            else:
+                column_list.append(column_name)
+        df = df.select(column_list)
+        return df;
+
+
+    def flatten(df):
+        read_nested_json_flag = True
+        while read_nested_json_flag:
+            df = read_nested_json(df);
+            read_nested_json_flag = False
+            for column_name in df.schema.names:
+                if isinstance(df.schema[column_name].dataType, ArrayType):
+                    read_nested_json_flag = True
+                elif isinstance(df.schema[column_name].dataType, StructType):
+                    read_nested_json_flag = True;
+        cols = [re.sub('[^a-zA-Z0-1]', "", c.lower()) for c in df.columns]
+        return df.toDF(*cols);
+
+
+    df1 = flatten(fdf)
+    #display data on console
+    # df1.writeStream.format('console').outputMode("append").start().awaitTermination()
+    # df1.printSchema()
+
+
+    # write this data in mysql
+    def foreach_batch_function(df, epoch_id):
+        df.write.mode('append').format('jdbc').option('url','jdbc:mysql://rushikesh.czcemaajrvs2.ap-south-1.rds.amazonaws.com:3306/mysqldb?useSSL=false') \
+            .option('user', 'myuser').option('password', 'mypassword').option('dbtable', 'livefiledata5'). \
+            option('driver', 'com.mysql.jdbc.Driver').save()
+
+
+    pass
+
+    df1.writeStream.foreachBatch(foreach_batch_function).start().awaitTermination()
